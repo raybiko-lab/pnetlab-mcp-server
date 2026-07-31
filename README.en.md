@@ -12,7 +12,7 @@ but talks to PNETLab **v6's** session-scoped API instead of the classic EVE-NG A
 (which v6 removed).
 
 > **⚠️ Generation & testing note**  
-> The code in this project is entirely AI-generated. Basic functionality has been live-tested, but it has not gone through comprehensive coverage testing. You're encouraged to have an agent run its own validation pass against your PNETLab environment before relying on it. Issues welcome.
+> The code in this project is entirely AI-generated. Basic functionality has been live-tested, but it has not gone through comprehensive coverage testing. You're encouraged to have an agent run its own validation pass against your PNETLab environment before relying on it.
 
 ## Why this exists
 

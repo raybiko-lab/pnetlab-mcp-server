@@ -1,60 +1,59 @@
 # pnetlab-mcp-server
 
-An [MCP](https://modelcontextprotocol.io) server that gives Claude (and other LLM
-agents) programmatic control over **PNETLab v6** network labs — create topologies,
-add nodes, wire them, push configs, boot them and read back state, all through
-natural language.
+[![中文](https://img.shields.io/badge/README-中文-blue.svg)](README.md) [![English](https://img.shields.io/badge/README-English-lightgrey.svg)](README.en.md)
 
-It mirrors the tool surface of [`axiom-works-ai/eveng-mcp-server`](https://github.com/axiom-works-ai/eveng-mcp-server)
-but talks to PNETLab **v6's** session-scoped API instead of the classic EVE-NG API
-(which v6 removed).
+一个 [MCP](https://modelcontextprotocol.io) 服务器,让 Claude(以及其他 LLM
+Agent)可以通过自然语言**程序化控制 PNETLab v6** 网络实验环境 —— 创建拓扑、
+添加节点、连线、推送配置、启动节点并读取状态。
 
-## Why this exists
+它复刻了 [`axiom-works-ai/eveng-mcp-server`](https://github.com/axiom-works-ai/eveng-mcp-server)
+的工具集,但对接的是 **PNETLab v6** 的会话级 API,而不是 v6 已经移除的经典
+EVE-NG API。
 
-PNETLab v6 (6.0.0+) is a Laravel rewrite that kept the old EVE-NG engine under
-`/api/` but:
+## 为什么需要它
 
-- **Deleted** the classic login (`/api/auth/login`), `/api/status`, `/api/labs/`,
-  `/api/folders/`, `/api/users/`.
-- **Moved** lab operations to a session-scoped API: `/api/labs/session/*`.
-- **Replaced** login with a Laravel endpoint: `POST /store/public/auth/login/login`.
+PNETLab v6(6.0.0+)是一次 Laravel 重写,保留了旧 EVE-NG 引擎(仍在 `/api/`
+下),但是:
 
-So `eveng-mcp-server` (which speaks the classic API) does **not** work against v6.
-This server was reverse-engineered and live-verified against PNETLab 6.0.0-100.
+- **删除**了经典登录(`/api/auth/login`)、`/api/status`、`/api/labs/`、
+  `/api/folders/`、`/api/users/`。
+- **把实验操作迁移到**会话级 API:`/api/labs/session/*`。
+- **替换**了登录方式,改为 Laravel 端点:`POST /store/public/auth/login/login`。
 
-## Install
+所以 `eveng-mcp-server`(走经典 API)在 v6 上**无法工作**。本服务器是针对
+PNETLab 6.0.0-100 逆向工程并实际验证过的。
+
+## 安装
 
 ```bash
 pip install -e .
 ```
 
-Provides the `pnetlab-mcp-server` command.
+安装后提供 `pnetlab-mcp-server` 命令。
 
-## Configure
+## 配置
 
-Set env vars (the server logs in lazily on first tool call):
+设置环境变量(服务器在第一次调用工具时才会懒加载登录):
 
-| Variable | Example | Purpose |
+| 变量 | 示例 | 用途 |
 |---|---|---|
-| `PNETLAB_HOST` | `http://192.168.231.128` | PNETLab v6 URL |
-| `PNETLAB_USERNAME` | `mcp` | Account the agent works as (use a **dedicated** account) |
-| `PNETLAB_PASSWORD` | `pnet` | Worker password |
-| `PNETLAB_VIEWER_USERNAME` | `admin` | (optional) Account that watches in the browser |
-| `PNETLAB_VIEWER_PASSWORD` | `pnet` | Viewer password |
+| `PNETLAB_HOST` | `http://192.168.231.128` | PNETLab v6 地址 |
+| `PNETLAB_USERNAME` | `mcp` | Agent 使用的工作账号(请用**专用**账号) |
+| `PNETLAB_PASSWORD` | `pnet` | 工作账号密码 |
+| `PNETLAB_VIEWER_USERNAME` | `admin` | (可选)在浏览器里查看的账号 |
+| `PNETLAB_VIEWER_PASSWORD` | `pnet` | 查看账号密码 |
 
-**Why a dedicated worker account?** v6 allows one active lab session per user
-account. If the agent and your browser both use `admin`, `open_lab` fails with
-`20039 "sandbox already exists"`. Give the agent its own account (e.g. `mcp`,
-admin role) so your browser is free.
+**为什么要专用工作账号?** v6 每个用户账号只能有一个活跃的实验会话。如果
+Agent 和你的浏览器都用 `admin`,`open_lab` 会报 `20039 "sandbox already
+exists"`。给 Agent 一个独立账号(例如 `mcp`,admin 角色),你的浏览器就自由了。
 
-**Watching live in the browser.** When `PNETLAB_VIEWER_*` is set, `open_lab`
-automatically joins the viewer account to the agent's lab session - so the two
-share one live topology. After the agent opens a lab, just log into the PNETLab
-web UI as the viewer account and open the lab (or go to `/legacy/topology`):
-you'll see the agent's topology, and refresh to see its changes. `join_viewer`
-re-joins if you opened the browser first; `close_lab` also leaves the viewer.
+**在浏览器里实时查看。** 当设置了 `PNETLAB_VIEWER_*` 时,`open_lab` 会自动把
+查看账号加入 Agent 的实验会话 —— 于是两者共享同一个实时拓扑。Agent 打开实验
+后,只要用查看账号登录 PNETLab 网页 UI 并打开该实验(或访问
+`/legacy/topology`):你就能看到 Agent 的拓扑,刷新即可看到它的改动。
+`join_viewer` 用于在你先打开了浏览器时重新加入;`close_lab` 也会让查看账号退出。
 
-### Claude Code (`.claude.json`)
+### Claude Code(`.claude.json`)
 
 ```json
 {
@@ -73,50 +72,50 @@ re-joins if you opened the browser first; `close_lab` also leaves the viewer.
 }
 ```
 
-Restart Claude Code after adding it.
+添加后重启 Claude Code。
 
-## Tools
+## 工具
 
-| Tool | What it does |
+| 工具 | 作用 |
 |---|---|
-| `list_templates` | List installed node templates (ids for `add_node`) |
-| `list_network_types` | List network types (bridge, pnet0..9, ovs) |
-| `open_lab(path)` | Open a lab by filename, e.g. `2pc_1sw.unl` (no leading slash); auto-joins viewer |
-| `close_lab()` | Leave the current lab session (also leaves the viewer) |
-| `join_viewer()` | (Re)join the viewer account to the agent's session so you can watch in the browser |
-| `get_lab()` | Info + full topology (nodes/networks/connections) + node status |
-| `get_node_status()` | Per-node running status (0=stopped, 1=building, 2=running) |
-| `add_node(type, template, name, ...)` | Add a node; returns id + console port |
-| `connect_nodes(src_id, src_if, dest_id, dest_if)` | P2P link between two node interfaces |
-| `start_node(node_id?)` | Start one node, or all if id omitted |
-| `stop_node(node_id?)` | Stop one node, or all if id omitted |
-| `delete_node(node_id)` | Delete a node (stop it first) |
-| `push_config(node_id, config)` | Push startup config (applied on next boot) |
-| `node_console(node_id)` | Get a node's telnet/SSH host:port for CLI access |
+| `list_templates` | 列出已安装的节点模板(其中的 key 即 add_node 用的模板 id) |
+| `list_network_types` | 列出网络类型(bridge、pnet0..9、ovs) |
+| `open_lab(path)` | 按文件名打开实验,如 `2pc_1sw.unl`(无前导斜杠);自动加入查看账号 |
+| `close_lab()` | 离开当前实验会话(同时让查看账号退出) |
+| `join_viewer()` | (重新)把查看账号加入 Agent 的会话,以便在浏览器里查看 |
+| `get_lab()` | 信息 + 完整拓扑(节点/网络/连接)+ 节点状态 |
+| `get_node_status()` | 每个节点的运行状态(0=已停止、1=启动中、2=运行中) |
+| `add_node(type, template, name, ...)` | 添加节点;返回新节点 id + 控制台端口 |
+| `connect_nodes(src_id, src_if, dest_id, dest_if)` | 两个节点接口之间的点对点链路 |
+| `start_node(node_id?)` | 启动一个节点,不传 id 则启动全部 |
+| `stop_node(node_id?)` | 停止一个节点,不传 id 则停止全部 |
+| `delete_node(node_id)` | 删除节点(需先停止) |
+| `push_config(node_id, config)` | 推送启动配置(下次启动时生效) |
+| `node_console(node_id)` | 获取节点的 telnet/SSH host:port,用于 CLI 访问 |
 
-## Important gotchas (v6-specific)
+## 重要注意事项(v6 专属)
 
-1. **One session per user.** v6 allows one active lab session per account. The
-   agent must use a dedicated account (e.g. `mcp`), not the one you browse with.
-   Configure `PNETLAB_VIEWER_*` so `open_lab` auto-joins your browsing account to
-   the agent's session - then both share one live topology (see Configure above).
-2. **All `/api/labs/session/*` calls use JSON bodies.** Form-encoded bodies are
-   silently dropped and show up as `40000 "missing required fields"`.
-3. **`open_lab` path has no leading slash** — `"2pc_1sw.unl"`, not `"/2pc_1sw.unl"`.
-4. `open_lab` creates/reuses a sandbox file (`labs<name>.unl`) on the server; the
-   sandbox is empty on first open. `close_lab` releases the session binding but
-   keeps the sandbox file (reopening is fine).
-5. To delete a node you must `stop_node` it first.
-6. `start_node()`/`stop_node()` with no id iterate the lab's node ids (the API's
-   null-id "all" path is unreliable).
+1. **每个账号一个会话。** v6 每个账号只能有一个活跃实验会话。Agent 必须用
+   专用账号(例如 `mcp`),不能用你浏览时用的账号。配置 `PNETLAB_VIEWER_*`,
+   `open_lab` 会自动把你的浏览账号加入 Agent 的会话 —— 两者共享同一个实时拓扑
+   (见上文"配置")。
+2. **所有 `/api/labs/session/*` 调用都用 JSON body。** 表单编码的 body 会被
+   静默丢弃,表现为 `40000 "missing required fields"`。
+3. **`open_lab` 的 path 没有前导斜杠** —— 是 `"2pc_1sw.unl"`,不是
+   `"/2pc_1sw.unl"`。
+4. `open_lab` 会在服务器上创建/复用一个沙盒文件(`labs<name>.unl`);沙盒在
+   首次打开时为空。`close_lab` 释放会话绑定但保留沙盒文件(重新打开没问题)。
+5. 删除节点前必须先 `stop_node`。
+6. 不带 id 的 `start_node()` / `stop_node()` 会遍历实验的节点 id(API 的
+   null-id "全部" 路径不可靠)。
 
-## Architecture
+## 架构
 
 ```
 LLM agent  ──MCP/stdio──►  pnetlab-mcp-server  ──HTTP/JSON──►  PNETLab v6
-                              (this repo)                         /store/public/auth/login/login  (login)
-                                                                  /api/labs/session/*             (lab ops)
-                                                                  /api/list/templates|networks    (listings)
+                              (本仓库)                            /store/public/auth/login/login  (登录)
+                                                                  /api/labs/session/*             (实验操作)
+                                                                  /api/list/templates|networks    (列表)
 ```
 
-`client.py` is the verified v6 API client; `server.py` wraps it as MCP tools.
+`client.py` 是经过验证的 v6 API 客户端;`server.py` 把它封装为 MCP 工具。

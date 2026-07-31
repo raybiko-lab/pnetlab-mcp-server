@@ -257,7 +257,7 @@ def add_node(
     top: int = 100,
     ethernet: int = 1,
     config: str = "Unconfigured",
-    icon: str = "Desktop.png",
+    icon: str | None = None,
     console: str | None = None,
     qemu_arch: str | None = None,
     qemu_nic: str | None = None,
@@ -282,8 +282,11 @@ def add_node(
     ``template_defaults=False`` to supply everything yourself.
 
     ``console`` defaults to the template's console, falling back to ``telnet`` for
-    qemu/iol/dynamips (needed for status reporting and the console tools). Node is
-    added stopped; call start_node to boot it."""
+    qemu/iol/dynamips (needed for status reporting and the console tools). ``icon``
+    defaults to the template's icon (e.g. mikrotik -> ``Router.png``), falling back to
+    ``Desktop.png`` only when the template has none or ``template_defaults=False``.
+    Pass an explicit ``icon`` to override. Node is added stopped; call start_node to
+    boot it."""
     try:
         return _ok(
             _c().add_node(

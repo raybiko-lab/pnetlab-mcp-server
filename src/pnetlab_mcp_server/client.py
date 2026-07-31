@@ -560,7 +560,7 @@ class PNETLabClient:
         top: int = 100,
         ethernet: int = 1,
         config: str = "Unconfigured",
-        icon: str = "Desktop.png",
+        icon: str | None = None,
         template_defaults: bool = True,
         **fields: Any,
     ) -> dict:
@@ -577,6 +577,11 @@ class PNETLabClient:
         Console resolution (in order): explicit ``console`` arg -> template's
         console -> ``"telnet"`` for qemu/iol/dynamips (needed for status reporting
         and the console tools) -> unset for vpcs/docker.
+
+        Icon resolution (in order): explicit ``icon`` arg -> template's icon (e.g.
+        mikrotik -> ``Router.png``) -> ``"Desktop.png"``. Only an explicit ``icon``
+        overrides the template; the old hard-coded ``Desktop.png`` default is gone so
+        nodes inherit the right icon automatically.
         """
         body: dict[str, Any] = {
             "type": type,
@@ -586,8 +591,9 @@ class PNETLabClient:
             "top": top,
             "ethernet": ethernet,
             "config": config,
-            "icon": icon,
         }
+        if icon is not None:
+            body["icon"] = icon
         for k, v in fields.items():
             if v is not None and k in self._NODE_FIELDS:
                 body[k] = v
@@ -599,6 +605,9 @@ class PNETLabClient:
         # Console fallback: QEMU/IOL/dynamips need telnet for status + console.
         if "console" not in body and type in ("qemu", "iol", "dynamips"):
             body["console"] = "telnet"
+        # Icon fallback: template had none, or template_defaults disabled.
+        if "icon" not in body:
+            body["icon"] = "Desktop.png"
         data = self._api("POST", "/labs/session/nodes/add", body)
         return data.get("update", {}).get("nodes", {})
 

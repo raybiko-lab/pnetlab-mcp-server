@@ -11,6 +11,9 @@ It mirrors the tool surface of [`axiom-works-ai/eveng-mcp-server`](https://githu
 but talks to PNETLab **v6's** session-scoped API instead of the classic EVE-NG API
 (which v6 removed).
 
+> **⚠️ Generation & testing note**  
+> The code in this project is entirely AI-generated. Basic functionality has been live-tested, but it has not gone through comprehensive coverage testing. You're encouraged to have an agent run its own validation pass against your PNETLab environment before relying on it. Issues welcome.
+
 ## Why this exists
 
 PNETLab v6 (6.0.0+) is a Laravel rewrite that kept the old EVE-NG engine under

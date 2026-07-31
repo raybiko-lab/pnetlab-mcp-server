@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pnetlab-mcp-server"
+version = "0.1.0"
+description = "MCP server that gives LLM agents programmatic control over PNETLab v6 network labs"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "pnetlab-mcp" }]
+dependencies = [
+    "fastmcp>=3.0.0",
+    "requests>=2.31",
+]
+
+[project.scripts]
+pnetlab-mcp-server = "pnetlab_mcp_server.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

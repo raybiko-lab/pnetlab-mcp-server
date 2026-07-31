@@ -324,6 +324,7 @@ class PNETLabClient:
         )
         self._authed = False
         self._consoles: dict[int, _ConsoleSession] = {}
+        self._template_cache: dict[str, dict] = {}
 
     # -- auth -----------------------------------------------------------------
     def _request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
@@ -446,6 +447,37 @@ class PNETLabClient:
             "default_image": info["default_image"],
         }
 
+    # Node fields whose defaults are pulled from the template (see
+    # _template_defaults). These are the fields a GUI-created node inherits, so
+    # applying them makes an API-created node behave identically.
+    _TEMPLATE_DEFAULT_FIELDS = (
+        "image", "ram", "cpu", "qemu_arch", "qemu_nic", "qemu_options",
+        "qemu_version", "console", "icon", "pci_mode", "config_script",
+    )
+
+    def _template_defaults(self, template: str) -> dict:
+        """Return the template's default field values, extracted from
+        ``GET /api/list/templates/<template>`` -> data.options.<field>.value.
+
+        Falsy values (None/""/0/False -- e.g. a missing image reported as False,
+        or vpcs' empty console) are skipped so they don't clobber good defaults.
+        Cached per template for the client's lifetime."""
+        if template in self._template_cache:
+            return self._template_cache[template]
+        defaults: dict[str, Any] = {}
+        try:
+            options = self._api("GET", f"/list/templates/{template}").get("data", {}).get("options", {}) or {}
+        except PNETLabError:
+            self._template_cache[template] = defaults
+            return defaults
+        for field in self._TEMPLATE_DEFAULT_FIELDS:
+            entry = options.get(field)
+            val = entry.get("value") if isinstance(entry, dict) else entry
+            if val:  # truthy only -- skip None/""/0/False
+                defaults[field] = val
+        self._template_cache[template] = defaults
+        return defaults
+
     # -- lab session lifecycle ------------------------------------------------
     def open_lab(self, path: str) -> dict:
         """Open (or reopen) a lab by path, e.g. ``2pc_1sw.unl`` (no leading slash)."""
@@ -529,16 +561,22 @@ class PNETLabClient:
         ethernet: int = 1,
         config: str = "Unconfigured",
         icon: str = "Desktop.png",
+        template_defaults: bool = True,
         **fields: Any,
     ) -> dict:
         """Add a node to the open lab sandbox. Returns the new node object.
 
-        For QEMU nodes you almost always need ``image`` (a disk image from
-        list_images, e.g. ``mikrotik-7.23.2``) and often ``ram`` -- without an
-        image a QEMU node starts and immediately crashes. Other useful kwargs:
-        ``cpu``, ``qemu_arch``, ``qemu_nic``, ``qemu_options``, ``qemu_version``,
-        ``console`` (telnet/ssh/vnc/...), ``pci_mode``, ``config_script``,
-        ``firstmac``, ``delay``, ``serial``.
+        By default the template's built-in defaults are auto-applied (image, ram,
+        cpu, qemu_arch/qemu_nic/qemu_options/qemu_version, console, icon,
+        config_script, ...) -- the same fields a GUI-created node inherits -- so a
+        bare ``add_node("qemu", "mikrotik", "R1")`` yields a fully bootable node
+        matching the GUI. Pass ``template_defaults=False`` to skip this (then you
+        must supply image/ram/etc. yourself). Any field you pass explicitly takes
+        precedence over the template default.
+
+        Console resolution (in order): explicit ``console`` arg -> template's
+        console -> ``"telnet"`` for qemu/iol/dynamips (needed for status reporting
+        and the console tools) -> unset for vpcs/docker.
         """
         body: dict[str, Any] = {
             "type": type,
@@ -553,6 +591,14 @@ class PNETLabClient:
         for k, v in fields.items():
             if v is not None and k in self._NODE_FIELDS:
                 body[k] = v
+        # Auto-fill from the template (explicit caller fields already in body win).
+        if template_defaults:
+            for field, val in self._template_defaults(template).items():
+                if field not in body:
+                    body[field] = val
+        # Console fallback: QEMU/IOL/dynamips need telnet for status + console.
+        if "console" not in body and type in ("qemu", "iol", "dynamips"):
+            body["console"] = "telnet"
         data = self._api("POST", "/labs/session/nodes/add", body)
         return data.get("update", {}).get("nodes", {})
 

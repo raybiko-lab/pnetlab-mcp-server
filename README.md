@@ -96,7 +96,7 @@ exists"`。给 Agent 一个独立账号(例如 `mcp`,admin 角色),你的浏览�
 ### 节点
 | 工具 | 作用 |
 |---|---|
-| `add_node(type, template, name, image?, ram?, ...)` | 添加节点。QEMU 节点需 `image`(来自 list_images);`console` 默认 `telnet`。还支持 `cpu/qemu_arch/qemu_nic/qemu_options/qemu_version/pci_mode/config_script/...` |
+| `add_node(type, template, name, image?, ram?, ...)` | 添加节点。**默认自动套用模板自带默认值**(image/ram/cpu/qemu_*/console/config_script),与 GUI 建的节点一致;只需 `add_node("qemu","mikrotik","R1")` 即可建出可启动节点。显式传参覆盖模板;`template_defaults=false` 关闭 |
 | `update_node(node_id, image?, ram?, ...)` | 修改已有节点字段(镜像、内存、qemu_* 等)。改 image/ram 下次启动生效 |
 | `connect_nodes(src_id, src_if, dest_id, dest_if)` | 两接口点对点链路。精简返回 `{network_id, src, dst}`(用 network_id 操作链路) |
 | `start_node(node_id?, check?)` | 启动节点(不传 id 启动全部)。`check=true` 启动后轮询状态,崩溃则返回诊断 |
@@ -130,9 +130,12 @@ exists"`。给 Agent 一个独立账号(例如 `mcp`,admin 角色),你的浏览�
    静默丢弃,表现为 `40000 "missing required fields"`。
 3. **`open_lab` 的 path 没有前导斜杠** -- 是 `"2pc_1sw.unl"`,不是
    `"/2pc_1sw.unl"`。
-4. **QEMU 节点必须有 `image`。** 不带镜像的 QEMU 节点启动即崩。用
-   `list_images(template)` 查可用镜像名,再传给 `add_node(image=...)`。GUI
-   建的节点镜像字段就是这么来的。
+4. **`add_node` 默认自动套用模板。** 建节点时会自动拉取模板自带默认值
+   (image/ram/cpu/qemu_arch/qemu_nic/qemu_options/qemu_version/console/config_script)
+   并填入,与 GUI 建的节点完全一致 -- 所以 `add_node("qemu","mikrotik","R1")`
+   就能直接建出可启动、可连控制台的节点,通常无需先 `list_images`。显式传入的
+   字段覆盖模板默认;`template_defaults=false` 可关闭。想换镜像时再用
+   `list_images` 查可用项,传 `image=...` 覆盖。
 5. **`console` 默认 `telnet`。** PNETLab 通过控制台端口是否在监听来判断节点
    "运行中"(状态 2)。`console` 为空时不会起 `qemu_wrapper_telnet` 转发器,
    端口不监听,于是状态恒为 0、控制台也连不上 -- 看起来像"启动即崩",实际

@@ -258,7 +258,7 @@ def add_node(
     ethernet: int = 1,
     config: str = "Unconfigured",
     icon: str = "Desktop.png",
-    console: str = "telnet",
+    console: str | None = None,
     qemu_arch: str | None = None,
     qemu_nic: str | None = None,
     qemu_options: str | None = None,
@@ -268,23 +268,27 @@ def add_node(
     firstmac: str | None = None,
     delay: int | None = None,
     serial: int | None = None,
+    template_defaults: bool = True,
 ) -> str:
     """Add a node to the open lab. ``type``/``template`` come from list_templates
     (e.g. type="vpcs" template="vpcs", or type="qemu" template="mikrotik").
 
-    For QEMU nodes you MUST set ``image`` (a disk image from list_images, e.g.
-    ``mikrotik-7.23.2``) -- without it the node starts and immediately crashes.
-    ``ram`` (MB) is also commonly needed. ``qemu_arch``/``qemu_nic``/``qemu_options``
-    /``qemu_version`` match what a GUI-created node uses (see get_template for the
-    defaults). ``console`` selects the console type (telnet/ssh/vnc/winbox/http).
-    Node is added stopped; call start_node to boot it.
+    By default (``template_defaults=True``) the template's built-in defaults are
+    auto-applied -- image, ram, cpu, qemu_arch/qemu_nic/qemu_options/qemu_version,
+    console, icon, config_script -- exactly what a GUI-created node inherits. So a
+    bare ``add_node("qemu", "mikrotik", "R1")`` produces a fully bootable node with
+    the right image and console; you usually don't need list_images first. Any field
+    you pass explicitly overrides the template default. Pass
+    ``template_defaults=False`` to supply everything yourself.
 
-    The image/ram/qemu_* values match the fields a GUI-created node carries; if
-    unsure, build one node in the GUI and read its fields with get_lab."""
+    ``console`` defaults to the template's console, falling back to ``telnet`` for
+    qemu/iol/dynamips (needed for status reporting and the console tools). Node is
+    added stopped; call start_node to boot it."""
     try:
         return _ok(
             _c().add_node(
                 type, template, name, left, top, ethernet, config, icon,
+                template_defaults=template_defaults,
                 image=image, ram=ram, cpu=cpu, console=console, qemu_arch=qemu_arch,
                 qemu_nic=qemu_nic, qemu_options=qemu_options, qemu_version=qemu_version,
                 pci_mode=pci_mode, config_script=config_script, firstmac=firstmac,

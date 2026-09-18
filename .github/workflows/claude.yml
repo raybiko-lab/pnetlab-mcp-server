@@ -1,0 +1,53 @@
+name: Claude Code
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+    concurrency:
+      group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ARK_TOKEN }}
+          model: ark-code-latest
+          settings: |
+            {
+              "ANTHROPIC_BASE_URL": "https://ark.cn-beijing.volces.com/api/coding",
+              "ANTHROPIC_DEFAULT_FABLE_MODEL": "glm-5-3-flash-260828[1M]",
+              "ANTHROPIC_DEFAULT_FABLE_MODEL_NAME": "glm-5-3-flash-260828",
+              "ANTHROPIC_DEFAULT_HAIKU_MODEL": "ark-code-latest",
+              "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek-v4-flash[1M]",
+              "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "deepseek-v4-flash",
+              "ANTHROPIC_DEFAULT_SONNET_MODEL": "ark-code-latest[1M]",
+              "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "ark-code-latest",
+              "ANTHROPIC_AUTH_TOKEN": "${{ secrets.ARK_TOKEN }}"
+            }

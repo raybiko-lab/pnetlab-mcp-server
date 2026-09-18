@@ -38,7 +38,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ARK_TOKEN }}
-          model: ark-code-latest
+          github_token: ${{ github.token }}
           settings: |
             {
               "ANTHROPIC_BASE_URL": "https://ark.cn-beijing.volces.com/api/coding",

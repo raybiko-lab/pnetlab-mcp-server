@@ -37,17 +37,19 @@ jobs:
         id: claude
         uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ARK_TOKEN }}
           github_token: ${{ github.token }}
           settings: |
             {
-              "ANTHROPIC_BASE_URL": "https://ark.cn-beijing.volces.com/api/coding",
-              "ANTHROPIC_DEFAULT_FABLE_MODEL": "glm-5-3-flash-260828[1M]",
-              "ANTHROPIC_DEFAULT_FABLE_MODEL_NAME": "glm-5-3-flash-260828",
-              "ANTHROPIC_DEFAULT_HAIKU_MODEL": "ark-code-latest",
-              "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek-v4-flash[1M]",
-              "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "deepseek-v4-flash",
-              "ANTHROPIC_DEFAULT_SONNET_MODEL": "ark-code-latest[1M]",
-              "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "ark-code-latest",
-              "ANTHROPIC_AUTH_TOKEN": "${{ secrets.ARK_TOKEN }}"
+              "env": {
+                "ANTHROPIC_AUTH_TOKEN": "${{ secrets.ARK_TOKEN }}",
+                "ANTHROPIC_BASE_URL": "https://ark.cn-beijing.volces.com/api/coding",
+                "ANTHROPIC_DEFAULT_FABLE_MODEL": "glm-5-3-flash-260828[1M]",
+                "ANTHROPIC_DEFAULT_FABLE_MODEL_NAME": "glm-5-3-flash-260828",
+                "ANTHROPIC_DEFAULT_HAIKU_MODEL": "ark-code-latest",
+                "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek-v4-flash[1M]",
+                "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "deepseek-v4-flash",
+                "ANTHROPIC_DEFAULT_SONNET_MODEL": "ark-code-latest[1M]",
+                "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "ark-code-latest",
+                "ANTHROPIC_MODEL": "ark-code-latest"
+              }
             }
